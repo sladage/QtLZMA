@@ -18,6 +18,10 @@ LZMA library for Qt.
 Encoding QByteArray with LZMA2:
 
 ```
+#include <QtLZMA/qlzma.h>
+
+...
+
 QByteArray datain = "testdata";
 QByteArray dataout;
 int size = datain.size();
@@ -35,6 +39,10 @@ if (r != 0)
 
 Decoding QByteArray with LZMA2:
 ```
+#include <QtLZMA/qlzma.h>
+
+...
+
 QByteArray datain = <lzma2 data>;
 QByteArray dataout;
 int size = <uncompressed file size>;
