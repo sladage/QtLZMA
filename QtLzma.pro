@@ -32,7 +32,8 @@ HEADERS += include/qlzma.h \
     src/lzma/Lzma2Dec.h \
     src/lzma/Lzma2Enc.h \
     src/lzma/Types.h \
-    src/qlzmacoder.h
+    src/qlzmacoder.h \
+    src/lzma/LzHash.h
 unix {
     target.path = /usr/lib
     INSTALLS += target

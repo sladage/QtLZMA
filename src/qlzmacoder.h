@@ -20,7 +20,7 @@
 ****************************************************************************/
 #ifndef QLZMACODER_H
 #define QLZMACODER_H
-
+/*
 #include "qlzma.h"
 #include "lzma/Types.h"
 #include "lzma/LzmaDec.h"
@@ -55,6 +55,6 @@ signals:
 
 private:
     QLZMA* m_pQLZMA;
-};
+};*/
 
 #endif // QLZMACODER_H
