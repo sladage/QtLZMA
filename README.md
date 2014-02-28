@@ -13,6 +13,16 @@ LZMA library for Qt.
 -Add proper threaded encoding and decoding support.  
 -Add support for (en/de)-coding via QIODevices.  
 
+### Install
+
+```
+git clone https://github.com/sladage/QtLZMA.git QtLZMA
+cd QtLZMA
+qmake
+make
+sudo make install
+```
+
 ### Usage
 
 Encoding QByteArray with LZMA2:
