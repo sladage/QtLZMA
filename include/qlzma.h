@@ -21,19 +21,19 @@
 #ifndef QLZMA_H
 #define QLZMA_H
 
-//#include <QObject>
+#include <QObject>
 #include <QByteArray>
 
 class QIODevice;
 class QLZMACoder;
 class QThread;
 
-class QLZMA// : public QObject
+class QLZMA : public QObject
 {
-    //Q_OBJECT
+    Q_OBJECT
 public:
-    //QLZMA(QObject* parent=0);
-    //~QLZMA();
+    QLZMA(QObject* parent=0);
+    ~QLZMA();
 
     static int decode(QByteArray &in, QByteArray &out, quint64 uncompressed_size, QByteArray header);
     static int encode(QByteArray &in, QByteArray &out, QByteArray &header, int compression_level = 5);
@@ -41,8 +41,11 @@ public:
     static int decode2(QByteArray &in, QByteArray &out, quint64 uncompressed_size, unsigned char lzmaprop);
     static int encode2(QByteArray &in, QByteArray &out, unsigned char *lzmaprop, int compression_level = 5);
 
-    /*void decode(QIODevice* in, QIODevice* out, quint64 uncompressed_size);
-    void encode(QIODevice* in, QIODevice* out);
+    void decode(QIODevice* in, QIODevice* out, quint64 uncompressed_size, QByteArray header);
+    void encode(QIODevice* in, QIODevice* out, QByteArray &header, int compression_level = 5);
+
+    void decode2(QIODevice* in, QIODevice* out, quint64 uncompressed_size, unsigned char lzmaprop);
+    void encode2(QIODevice* in, QIODevice* out, unsigned char *lzmaprop, int compression_level = 5);
 
 signals:
     void finished();
@@ -51,7 +54,7 @@ signals:
 
 private:
     QLZMACoder* m_pCoder;
-    QThread* m_pThread;*/
+    QThread* m_pThread;
 };
 
 #endif // QLZMA_H

@@ -306,7 +306,7 @@ int QLZMA::decode2(QByteArray &in, QByteArray &out, quint64 uncompressed_size, u
     return res;
 }
 
-/*
+
 SRes coderprogressfunc(void *p, UInt64 inSize, UInt64 outSize);
 
 
@@ -426,7 +426,7 @@ void QLZMACoder::_decode(QIODevice* in, QIODevice* out, quint64 uncompressed_siz
     }
 }
 
-void QLZMACoder::_encode(QIODevice* in, QIODevice* out)
+void QLZMACoder::_encode(QIODevice* in, QIODevice* out, QByteArray &headerdata, int compression_level)
 {
     CLzmaEncHandle enc;
     SRes res;
@@ -454,24 +454,23 @@ void QLZMACoder::_encode(QIODevice* in, QIODevice* out)
     }
 
     LzmaEncProps_Init(&props);
+    props.level = compression_level;
     res = LzmaEnc_SetProps(enc, &props);
 
     if (res == SZ_OK)
     {
-      Byte header[LZMA_PROPS_SIZE];
-      size_t headerSize = LZMA_PROPS_SIZE;
+        Byte header[LZMA_PROPS_SIZE];
+        size_t headerSize = LZMA_PROPS_SIZE;
 
-      res = LzmaEnc_WriteProperties(enc, header, &headerSize);
-      if (out->write((char*)(&header), headerSize) != headerSize)
-        res = SZ_ERROR_WRITE;
-      else
-      {
+        res = LzmaEnc_WriteProperties(enc, header, &headerSize);
+        headerdata = QByteArray::fromRawData((char*)(&header),headerSize);
+
         if (res == SZ_OK)
         {
             //res = Encode2(enc,&instream,&outstream);
-            res = LzmaEnc_Encode(enc, &outStream.s, &inStream.s, &cp.i, &g_Alloc, &g_Alloc);
+            res = LzmaEnc_Encode(enc, &outStream.s, &inStream.s, NULL, &g_Alloc, &g_Alloc);
         }
-      }
+
     }
     LzmaEnc_Destroy(enc, &g_Alloc, &g_Alloc);
 
@@ -516,4 +515,4 @@ void QLZMA::decode(QIODevice *in, QIODevice *out, quint64 uncompressed_size)
 {
     m_pCoder->decode(in,out,uncompressed_size);
 }
-*/
+
