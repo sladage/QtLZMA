@@ -19,7 +19,8 @@
 **
 ****************************************************************************/
 
-#pragma once
+#ifndef QTLZMA_H
+#define QTLZMA_H
 
 #include <QByteArray>
 
@@ -31,3 +32,5 @@ public:
     static int decode2(QByteArray &in, QByteArray &out, quint64 uncompressed_size, unsigned char lzmaprop);
     static int encode2(QByteArray &in, QByteArray &out, unsigned char *lzmaprop, int compression_level = 5);
 };
+
+#endif // QTLZMA_H
