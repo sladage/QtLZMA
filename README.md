@@ -1,7 +1,10 @@
+[![Qt Pods](http://qt-pods.org/assets/logo.png "Qt Pods")](http://qt-pods.org)
+
 QtLZMA
 ======
 
 LZMA library for Qt.
+http://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Markov_chain_algorithm
 
 ### Features
 
@@ -15,13 +18,11 @@ LZMA library for Qt.
 
 ### Install
 
-```
-git clone https://github.com/sladage/QtLZMA.git QtLZMA
-cd QtLZMA
-qmake
-make
-sudo make install
-```
+QtLZMA is available through qt-pods. See here to learn more about qt-pods:
+https://github.com/cybercatalyst/qt-pods
+
+
+Of course, you can still build it manually.
 
 ### Usage
 
