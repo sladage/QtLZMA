@@ -37,7 +37,7 @@ QByteArray datain = "testdata";
 QByteArray dataout;
 int size = datain.size();
 unsigned char prop;
-int r = QLZMA::encode2(datain,dataout,&prop);
+int r = QLZMA::encode2(datain,&dataout,&prop);
 
 if (r != 0)
 {
@@ -59,7 +59,7 @@ QByteArray dataout;
 int size = <uncompressed file size>;
 unsigned char prop = <lzma2 prop>;
 
-int r = QLZMA::decode2(datain,dataout,size,prop);
+int r = QLZMA::decode2(datain,&dataout,size,prop);
 
 if (r != 0)
 {
