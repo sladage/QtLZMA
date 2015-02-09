@@ -64,11 +64,11 @@ static size_t qiowrite(void *p, const void* buf, size_t size)
     return io->io->write((const char*)buf,size);
 }
 
-int LZMA::encode(QByteArray &in, QByteArray &out, QByteArray &headerdata, int compression_level)
+int LZMA::encode(const QByteArray &in, QByteArray *out, QByteArray &headerdata, int compression_level)
 {
     CLzmaEncHandle enc;
-    QDataStream instream(&in,QIODevice::ReadOnly);
-    QDataStream outstream(&out,QIODevice::WriteOnly);
+    QDataStream instream(in);
+    QDataStream outstream(out,QIODevice::WriteOnly);
     SRes res;
     CLzmaEncProps props;
 
@@ -164,11 +164,11 @@ static SRes lzmadecode(CLzmaDec *state, QDataStream* instream, QDataStream* outs
     }
 }
 
-int LZMA::decode(QByteArray &in, QByteArray &out, quint64 uncompressed_size, QByteArray headerdata)
+int LZMA::decode(const QByteArray &in, QByteArray *out, quint64 uncompressed_size, QByteArray headerdata)
 {
     CLzmaDec state;
-    QDataStream outstream(&out,QIODevice::WriteOnly);
-    QDataStream instream(&in,QIODevice::ReadOnly);
+    QDataStream outstream(out,QIODevice::WriteOnly);
+    QDataStream instream(in);
 
     /* header: 5 bytes of LZMA properties */
     unsigned char header[LZMA_PROPS_SIZE];
@@ -185,11 +185,11 @@ int LZMA::decode(QByteArray &in, QByteArray &out, quint64 uncompressed_size, QBy
     return res;
 }
 
-int LZMA::encode2(QByteArray &in, QByteArray &out, unsigned char* lzmaprop, int compression_level)
+int LZMA::encode2(const QByteArray &in, QByteArray *out, unsigned char* lzmaprop, int compression_level)
 {
     CLzma2EncHandle enc;
-    QDataStream instream(&in,QIODevice::ReadOnly);
-    QDataStream outstream(&out,QIODevice::WriteOnly);
+    QDataStream instream(in);
+    QDataStream outstream(out,QIODevice::WriteOnly);
     SRes res;
     CLzma2EncProps props;
 
@@ -282,12 +282,12 @@ static SRes lzmadecode2(CLzma2Dec *state, QDataStream* instream, QDataStream* ou
     }
 }
 
-int LZMA::decode2(QByteArray &in, QByteArray &out, quint64 uncompressed_size, unsigned char lzmaprop)
+int LZMA::decode2(const QByteArray &in, QByteArray *out, quint64 uncompressed_size, unsigned char lzmaprop)
 {
     CLzma2Dec state;
-    QDataStream outstream(&out,QIODevice::WriteOnly);
+    QDataStream outstream(out,QIODevice::WriteOnly);
 
-    QDataStream instream(&in,QIODevice::ReadOnly);
+    QDataStream instream(in);
 
     Lzma2Dec_Construct(&state);
     RINOK(Lzma2Dec_Allocate(&state, lzmaprop, &g_Alloc));

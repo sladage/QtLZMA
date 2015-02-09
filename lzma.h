@@ -26,11 +26,11 @@
 
 class LZMA {
 public:
-    static int decode(QByteArray &in, QByteArray &out, quint64 uncompressed_size, QByteArray header);
-    static int encode(QByteArray &in, QByteArray &out, QByteArray &header, int compression_level = 5);
+    static int decode(const QByteArray &in, QByteArray *out, quint64 uncompressed_size, QByteArray header);
+    static int encode(const QByteArray &in, QByteArray *out, QByteArray &header, int compression_level = 5);
 
-    static int decode2(QByteArray &in, QByteArray &out, quint64 uncompressed_size, unsigned char lzmaprop);
-    static int encode2(QByteArray &in, QByteArray &out, unsigned char *lzmaprop, int compression_level = 5);
+    static int decode2(const QByteArray &in, QByteArray *out, quint64 uncompressed_size, unsigned char lzmaprop);
+    static int encode2(const QByteArray &in, QByteArray *out, unsigned char *lzmaprop, int compression_level = 5);
 };
 
 #endif // QTLZMA_H
