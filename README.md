@@ -9,12 +9,15 @@ http://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Markov_chain_algorithm
 ### Features
 
 -Encode/Decode LZMA and LZMA2 data from a QByteArray.
+-Encode/Decode LZMA2 QIODevice streams. (With threading support)
+
+### Limitations
+
+Currently only one thread may have a LZMACoder.
 
 ### TODO
 
--Add convience functions for (en/de)-coding which append the size and header.  
 -Add proper threaded encoding and decoding support.  
--Add support for (en/de)-coding via QIODevices.  
 
 ### Install
 
