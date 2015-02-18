@@ -26,6 +26,7 @@
 #include "lzma/Lzma2Enc.h"
 #include <QDataStream>
 #include <QIODevice>
+#include <QDebug>
 
 #define IN_BUF_SIZE (1 << 16)
 #define OUT_BUF_SIZE (1 << 16)
@@ -45,6 +46,13 @@ typedef struct
     ISeqOutStream s;
     QIODevice* io;
 } QIODevOutStream;
+
+typedef struct
+{
+    ICompressProgress cp;
+    LZMA::LZMACoder* coder;
+    quint64 size;
+} QCompressProgress;
 
 static SRes qioread(void *p, void* buf, size_t* size)
 {
@@ -109,7 +117,7 @@ int LZMA::encode(const QByteArray &in, QByteArray *out, QByteArray &headerdata, 
     return res;
 }
 
-static SRes lzmadecode(CLzmaDec *state, QDataStream* instream, QDataStream* outstream, quint64 uncompressed_size)
+inline SRes lzmadecode(CLzmaDec *state, QDataStream* instream, QDataStream* outstream, quint64 uncompressed_size)
 {
     int thereIsSize = (uncompressed_size != (UInt64)(Int64)-1);
     Byte inBuf[IN_BUF_SIZE];
@@ -227,12 +235,13 @@ int LZMA::encode2(const QByteArray &in, QByteArray *out, unsigned char* lzmaprop
     return res;
 }
 
-static SRes lzmadecode2(CLzma2Dec *state, QDataStream* instream, QDataStream* outstream, quint64 uncompressed_size)
+inline SRes lzmadecode2(CLzma2Dec *state, QIODevice* instream, QIODevice* outstream, quint64 uncompressed_size,LZMA::LZMACoder *coder=0)
 {
     int thereIsSize = (uncompressed_size != (UInt64)(Int64)-1);
     Byte inBuf[IN_BUF_SIZE];
     Byte outBuf[OUT_BUF_SIZE];
     size_t inPos = 0, inSize = 0, outPos = 0;
+    qint64 totsize = instream->size();
     Lzma2Dec_Init(state);
     for (;;)
     {
@@ -240,7 +249,7 @@ static SRes lzmadecode2(CLzma2Dec *state, QDataStream* instream, QDataStream* ou
       {
         inSize = IN_BUF_SIZE;
         //RINOK(instream->readRawData((char*)(&inBuf), inSize));
-        inSize = instream->readRawData((char*)(&inBuf), inSize);
+        inSize = instream->read((char*)(&inBuf), inSize);
         if (inSize == -1)
             return SZ_ERROR_READ;
         inPos = 0;
@@ -264,7 +273,7 @@ static SRes lzmadecode2(CLzma2Dec *state, QDataStream* instream, QDataStream* ou
         uncompressed_size -= outProcessed;
 
 
-        if (outstream->writeRawData((char*)(&outBuf), outPos) != outPos)
+        if (outstream->write((char*)(&outBuf), outPos) != outPos)
             return SZ_ERROR_WRITE;
 
         outPos = 0;
@@ -279,6 +288,8 @@ static SRes lzmadecode2(CLzma2Dec *state, QDataStream* instream, QDataStream* ou
           return res;
         }
       }
+      if (coder && !instream->isSequential())
+          emit coder->progress(((double)instream->pos()/(double)totsize)*100);
     }
 }
 
@@ -292,8 +303,152 @@ int LZMA::decode2(const QByteArray &in, QByteArray *out, quint64 uncompressed_si
     Lzma2Dec_Construct(&state);
     RINOK(Lzma2Dec_Allocate(&state, lzmaprop, &g_Alloc));
 
-    SRes res = lzmadecode2(&state, &instream, &outstream, uncompressed_size);
+    SRes res = lzmadecode2(&state, instream.device(), outstream.device(), uncompressed_size);
 
     Lzma2Dec_Free(&state, &g_Alloc);
     return res;
+}
+
+using namespace LZMA;
+
+LZMACoder::LZMACoder(QObject *parent) : QObject(parent)
+{
+    m_iUncompressedSize = -1;
+    m_ucLzmaProp = 0;
+    m_pInput = 0;
+    m_pOutput = 0;
+}
+
+void LZMACoder::decode2()
+{
+    m_CoderMutex.lock();
+
+    if (!m_pInput || !m_pOutput)
+    {
+        emit error(SZ_ERROR_PARAM);
+        return;
+    }
+
+    if (m_iUncompressedSize == -1)
+    {
+        emit error(SZ_ERROR_PARAM);
+        return;
+    }
+
+    CLzma2Dec state;
+    Lzma2Dec_Construct(&state);
+    int res = Lzma2Dec_Allocate(&state, m_ucLzmaProp, &g_Alloc);
+
+    if (res == SZ_OK)
+    {
+
+        res = lzmadecode2(&state, m_pInput, m_pOutput, m_iUncompressedSize,this);
+
+        Lzma2Dec_Free(&state, &g_Alloc);
+
+    }
+
+    if (res != SZ_OK)
+        emit error(res);
+    else
+    {
+        emit progress(100);
+        emit done(0);
+    }
+
+    m_CoderMutex.unlock();
+}
+
+
+SRes encode2progress(void *p, UInt64 inSize, UInt64 outSize)
+{
+    QCompressProgress* cp = (QCompressProgress*)p;
+    //TODO: ratio
+    double d = ((double)inSize/(double)cp->size)*100;
+    emit cp->coder->progress(d);
+    //qDebug() << inSize << outSize;
+}
+
+void LZMACoder::encode2(int compression_level)
+{
+    m_CoderMutex.lock();
+
+    if (!m_pInput || !m_pOutput)
+    {
+        emit error(SZ_ERROR_PARAM);
+        return;
+    }
+
+    CLzma2EncHandle enc;
+    SRes res;
+    CLzma2EncProps props;
+    unsigned char lzmaprop;
+    QCompressProgress cps;
+    cps.cp.Progress = &encode2progress;
+
+    QIODevInStream inStream;
+    QIODevOutStream outStream;
+
+    inStream.s.Read = &qioread;
+    inStream.io = m_pInput;
+
+    outStream.s.Write = &qiowrite;
+    outStream.io = m_pOutput;
+
+    cps.coder = this;
+    cps.size = m_pInput->size();
+
+    enc = Lzma2Enc_Create(&g_Alloc,&g_Alloc);
+    if (enc == 0)
+    {
+        emit error(SZ_ERROR_MEM);
+        return;
+    }
+
+    Lzma2EncProps_Init(&props);
+
+    props.lzmaProps.level = compression_level;
+
+    res = Lzma2Enc_SetProps(enc, &props);
+
+    if (res == SZ_OK)
+    {
+        //Byte header;
+
+        lzmaprop = Lzma2Enc_WriteProperties(enc);
+        //outstream << header;
+
+        if (m_pInput->isSequential())
+            res = Lzma2Enc_Encode(enc, &outStream.s, &inStream.s, 0);
+        else
+            res = Lzma2Enc_Encode(enc, &outStream.s, &inStream.s, (ICompressProgress*)(&cps));
+
+    }
+    Lzma2Enc_Destroy(enc);
+
+    if (res != SZ_OK)
+        emit error(res);
+    else
+    {
+        emit progress(100);
+        emit done(lzmaprop);
+    }
+
+    m_CoderMutex.unlock();
+}
+
+void LZMACoder::setIO(QIODevice *input ,QIODevice *output)
+{
+    m_pInput = input;
+    m_pOutput = output;
+}
+
+void LZMACoder::setLzmaProp(unsigned char lzmaprop)
+{
+    m_ucLzmaProp = lzmaprop;
+}
+
+void LZMACoder::setUncompressedSize(quint64 uncompressed_size)
+{
+    m_iUncompressedSize = uncompressed_size;
 }
