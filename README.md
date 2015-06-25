@@ -8,7 +8,7 @@ http://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Markov_chain_algorithm
 
 ### Features
 
--Encode/Decode LZMA and LZMA2 data from a QByteArray.
+-Encode/Decode LZMA and LZMA2 data from a QByteArray.  
 -Encode/Decode LZMA2 QIODevice streams. (With threading support)
 
 ### Limitations
