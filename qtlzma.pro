@@ -26,3 +26,14 @@ HEADERS += \
     lzma/Types.h \
     lzma/LzHash.h \
     lzma.h
+
+unix {
+    QMAKE_POST_LINK += cp libQtLzma.a lib/
+
+    headers.path    = /usr/local/include/QtLZMA
+    headers.files   += include/qlzma.h
+
+    target.path = /usr/local/lib
+    INSTALLS += target \
+                headers
+}
